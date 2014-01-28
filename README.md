@@ -1,2 +1,2 @@
-OpenNMS-RequisitionsToNotificationStrategy
+OpenNMS-RequisitionsToNotificationStragety
 ==========================================
