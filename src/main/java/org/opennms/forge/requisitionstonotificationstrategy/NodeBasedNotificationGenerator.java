@@ -1,5 +1,6 @@
 package org.opennms.forge.requisitionstonotificationstrategy;
 
+import com.google.common.base.Joiner;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -37,6 +38,7 @@ public class NodeBasedNotificationGenerator {
     private final String TEAM_PREFIX = "team";
     private final String TRANSPORT_PREFIX = "notify";
     private final String SPLITER = "::";
+    private final Joiner JOINER = Joiner.on(SPLITER);
 
     public void generateNotificationStrategy(File inFile, File outFolder) throws Exception {
         List<Requisition> requisitions = readRequisitonsFromFile(inFile);
@@ -44,7 +46,7 @@ public class NodeBasedNotificationGenerator {
         LOGGER.debug("Generating raw-notifications for nodes...");
         for (Requisition requisition : requisitions) {
             for (RequisitionNode node : requisition.getNodes()) {
-                notificationsList.addAll(gernerateNotificatoins(node));
+                notificationsList.addAll(generateNotifications(node));
             }
         }
         Map<String, Notification> uniquNotifications = new HashMap<>();
@@ -78,7 +80,7 @@ public class NodeBasedNotificationGenerator {
         notifications.marshal(new BufferedWriter(new FileWriter(outFolder.getAbsolutePath() + File.separator + NOTIFICATION_FILE_NAME)));
     }
 
-    private List<Notification> gernerateNotificatoins(RequisitionNode node) {
+    private List<Notification> generateNotifications(RequisitionNode node) {
         List<Notification> notifications = new ArrayList<>();
         //build destination path-id
         Set<String> destinationPathIdParts = new TreeSet<>();
@@ -87,17 +89,11 @@ public class NodeBasedNotificationGenerator {
                 destinationPathIdParts.add(category.getName());
             }
         }
-        StringBuilder sb = new StringBuilder();
-        for (String part : destinationPathIdParts) {
-            sb.append(part);
-            sb.append(SPLITER);
-        }
-        String destinatoinPathId = sb.toString();
-        if (destinatoinPathId.endsWith(SPLITER)) {
-            destinatoinPathId = destinatoinPathId.substring(0, destinatoinPathId.length() - SPLITER.length());
-        }
+
+        String destinatoinPathId = JOINER.join(destinationPathIdParts);
+        
         String nodeFilter = "(nodelabel = '" + node.getNodeLabel() + "')";
-        sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder();
         sb.append("(");
         for (String part : destinationPathIdParts) {
             sb.append("catinc");
