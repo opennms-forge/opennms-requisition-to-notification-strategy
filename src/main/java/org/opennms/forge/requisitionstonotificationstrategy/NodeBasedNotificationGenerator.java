@@ -32,17 +32,16 @@ import org.slf4j.LoggerFactory;
 public class NodeBasedNotificationGenerator {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(NodeBasedNotificationGenerator.class);
-    private List<Requisition> requisitions;
-    private final File requisitionsFile = new File("/tmp/A.xml");
-    private final File destinationPathsFile = new File("/tmp/destinationPaths.xml");
-    private final File notificationsFile = new File("/tmp/notifications.xml");
+    private final String DESTINATION_FILE_NAME = "destinationPaths.xml";
+    private final String NOTIFICATION_FILE_NAME = "notifications.xml";
     private final String TEAM_PREFIX = "team";
     private final String TRANSPORT_PREFIX = "notify";
     private final String SPLITER = "::";
 
-    public void runRequisition() throws Exception {
-        requisitions = readRequisitonsFromFile(requisitionsFile);
+    public void generateNotificationStrategy(File inFile, File outFolder) throws Exception {
+        List<Requisition> requisitions = readRequisitonsFromFile(inFile);
         List<Notification> notificationsList = new ArrayList<>();
+        LOGGER.debug("Generating raw-notifications for nodes...");
         for (Requisition requisition : requisitions) {
             for (RequisitionNode node : requisition.getNodes()) {
                 notificationsList.addAll(gernerateNotificatoins(node));
@@ -52,6 +51,8 @@ public class NodeBasedNotificationGenerator {
         for (Notification notification : notificationsList) {
             uniquNotifications.put(notification.getName(), notification);
         }
+        LOGGER.debug("Deduplicated {} raw-notifications to {} unique notifications", notificationsList.size(), uniquNotifications.size());
+
         org.opennms.netmgt.config.destinationPaths.Header destHeader = new Header();
         destHeader.setCreated("");
         destHeader.setRev("");
@@ -63,7 +64,7 @@ public class NodeBasedNotificationGenerator {
             destinationPaths.addPath(path);
         }
         LOGGER.debug("destination paths amount {}", destinationPaths.getPathCollection().size());
-        destinationPaths.marshal(new BufferedWriter(new FileWriter(destinationPathsFile)));
+        destinationPaths.marshal(new BufferedWriter(new FileWriter(outFolder.getAbsolutePath() + File.separator + DESTINATION_FILE_NAME)));
 
         org.opennms.netmgt.config.notifications.Header notHeader = new org.opennms.netmgt.config.notifications.Header();
         notHeader.setCreated("");
@@ -74,10 +75,10 @@ public class NodeBasedNotificationGenerator {
         for (Entry notification : uniquNotifications.entrySet()) {
             notifications.addNotification((Notification) notification.getValue());
         }
-        notifications.marshal(new BufferedWriter(new FileWriter(notificationsFile)));
+        notifications.marshal(new BufferedWriter(new FileWriter(outFolder.getAbsolutePath() + File.separator + NOTIFICATION_FILE_NAME)));
     }
 
-    public List<Notification> gernerateNotificatoins(RequisitionNode node) {
+    private List<Notification> gernerateNotificatoins(RequisitionNode node) {
         List<Notification> notifications = new ArrayList<>();
         //build destination path-id
         Set<String> destinationPathIdParts = new TreeSet<>();
@@ -149,7 +150,7 @@ public class NodeBasedNotificationGenerator {
         return notifications;
     }
 
-    public List<Path> generateDestinationPathForNotifications(Collection<Notification> notifications) {
+    private List<Path> generateDestinationPathForNotifications(Collection<Notification> notifications) {
         List<Path> paths = new ArrayList<>();
         Set<String> pathIDs = new TreeSet<>();
         for (Notification notification : notifications) {
@@ -218,7 +219,7 @@ public class NodeBasedNotificationGenerator {
         return paths;
     }
 
-    public List<Requisition> readRequisitonsFromFile(File requisitionsFile) throws JAXBException {
+    private List<Requisition> readRequisitonsFromFile(File requisitionsFile) throws JAXBException {
         JAXBContext jaxbContext = JAXBContext.newInstance(RequisitionCollection.class);
         Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
         return (RequisitionCollection) jaxbUnmarshaller.unmarshal(requisitionsFile);
