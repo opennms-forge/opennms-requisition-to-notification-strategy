@@ -32,7 +32,8 @@ public class Starter {
                     if (isRequisitionsFile(inFile)) {
                         LOGGER.info("Input file provides requisitions");
                         LOGGER.info("Starting generation...");
-                        NodeBasedNotificationGenerator notificationGenerator = new NodeBasedNotificationGenerator();
+//                        NodeBasedNotificationGenerator notificationGenerator = new NodeBasedNotificationGenerator();
+                        NotificationTokenBasedNotificationGenerator notificationGenerator = new NotificationTokenBasedNotificationGenerator();
                         try {
                             notificationGenerator.generateNotificationStrategy(inFile, outFolder);
                         } catch (Exception ex) {
