@@ -32,8 +32,8 @@ public class NotificationTokenBasedNotificationGenerator {
     private final static Logger LOGGER = LoggerFactory.getLogger(NotificationTokenBasedNotificationGenerator.class);
     private final String DESTINATION_FILE_NAME = "destinationPaths.xml";
     private final String NOTIFICATION_FILE_NAME = "notifications.xml";
-    private final String PREFIX_TEAM = "team";
-    private final String PREFIX_TRANSPORT = "send";
+    private final String PREFIX_TEAM = "team-";
+    private final String PREFIX_TRANSPORT = "notify-";
     private final String SPLITTER = "::";
     private final String PREFIX_NOTIFICATION_TOKEN = "NOTIFY";
 
@@ -221,7 +221,7 @@ public class NotificationTokenBasedNotificationGenerator {
         nodeLostService.setName(notificationToken);
         nodeLostService.setUei("uei.opennms.org/nodes/nodeLostService");
         nodeLostService.setDestinationPath(destinationPath);
-        String rule = "is" + getServiceFromNotificationToken(notificationToken) + " & " + "catinc" + destinationPath;
+        String rule = "is" + getServiceFromNotificationToken(notificationToken) + " & " + "catinc" + notificationToken;
         nodeLostService.setRule(rule);
         nodeLostService.setStatus("on");
         nodeLostService.setSubject("[SERVICE: %service%(%interface%)] #%noticeid%: %service% on %nodelabel%");
