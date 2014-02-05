@@ -145,8 +145,8 @@ public class NotificationTokenBasedNotificationGenerator {
                 }
 
                 Path path = new Path();
-                LOGGER.debug(PREFIX_NOTIFICATION_TOKEN + SPLITTER + transportName + SPLITTER + teamName);
-                path.setName(PREFIX_NOTIFICATION_TOKEN + SPLITTER + transportName + SPLITTER + teamName);
+                LOGGER.debug(transportName + SPLITTER + teamName);
+                path.setName(transportName + SPLITTER + teamName);
                 for (String team : teams) {
                     Target target = new Target();
                     target.setName(team);
