@@ -34,7 +34,7 @@ public class NotificationTokenBasedNotificationGenerator {
     private final String NOTIFICATION_FILE_NAME = "notifications.xml";
     private final String PREFIX_TEAM = "team-";
     private final String PREFIX_TRANSPORT = "notify-";
-    private final String SPLITTER = "::";
+    private final String SPLITTER = "__";
     private final String PREFIX_NOTIFICATION_TOKEN = "NOTIFY";
 
     public void generateNotificationStrategy(File inFile, File outFolder) throws Exception {
