@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import javax.xml.bind.JAXBContext;
@@ -36,14 +37,30 @@ public class NotificationTokenBasedNotificationGenerator {
     private final static Logger LOGGER = LoggerFactory.getLogger(NotificationTokenBasedNotificationGenerator.class);
     private final String DESTINATION_FILE_NAME = "destinationPaths.xml";
     private final String NOTIFICATION_FILE_NAME = "notifications.xml";
-    private final String PREFIX_TEAM = "team-";
-    private final String PREFIX_TRANSPORT = "notify-";
-    private final String SPLITTER = "__";
-    private final String PREFIX_NOTIFICATION_TOKEN = "NOTIFY";
-    private final String PREFIX_GENERATED = "GEN_";
+    private final String PREFIX_TEAM;
+    private final String PREFIX_TRANSPORT;
+    private final String SPLITTER;
+    private final String PREFIX_NOTIFICATION_TOKEN;
+    private final String PREFIX_GENERATED;
+    private final File REQUISITIONS_FILE;
+    private final File CONFIG_FOLDER;
+    private final Properties PROPERTIES;
+    private final String NOTIFICATION_NODE_TEXT = "All services are down on node %nodelabel%.\n" + "Notified by destination path: ";
+    private final String NOTIFICATION_SERVICE_TEXT = "%service% down on node %nodelabel%, %interface% at %time%.\n" + "Notified by destination path: ";
 
-    public void generateNotificationStrategy(File inFile, File outFolder) throws Exception {
-        List<Requisition> requisitions = readRequisitonsFromFile(inFile);
+    public NotificationTokenBasedNotificationGenerator(File requisitionsFile, File configFolder, Properties properties) {
+        this.REQUISITIONS_FILE = requisitionsFile;
+        this.CONFIG_FOLDER = configFolder;
+        this.PROPERTIES = properties;
+        this.PREFIX_GENERATED = PROPERTIES.getProperty("prefix_generated", "GEN_");
+        this.PREFIX_NOTIFICATION_TOKEN = PROPERTIES.getProperty("prefix_notification_token", "NOTIFY");
+        this.SPLITTER = PROPERTIES.getProperty("splitter", "__");
+        this.PREFIX_TRANSPORT = PROPERTIES.getProperty("prefix_transport", "notify-");
+        this.PREFIX_TEAM = PROPERTIES.getProperty("prefix_team", "team-");
+    }
+
+    public void generateNotificationStrategy() throws Exception {
+        List<Requisition> requisitions = readRequisitonsFromFile(REQUISITIONS_FILE);
         List<Notification> notificationsList = new ArrayList<>();
         LOGGER.debug("Generating raw-notifications for nodes...");
         for (Requisition requisition : requisitions) {
@@ -56,25 +73,26 @@ public class NotificationTokenBasedNotificationGenerator {
             uniquNotifications.put(notification.getName(), notification);
         }
         LOGGER.debug("Deduplicated {} raw-notifications to {} unique notifications", notificationsList.size(), uniquNotifications.size());
-        Notifications notifications = readExistingNotificatoins(outFolder);
+        Notifications notifications = readExistingNotificatoins(CONFIG_FOLDER);
         notifications = removeGeneratedNotifications(notifications, PREFIX_GENERATED);
-        LOGGER.debug("Adding {} new generated notifications", uniquNotifications.size());
+        LOGGER.info("Adding {} new generated notifications", uniquNotifications.size());
         for (Entry notification : uniquNotifications.entrySet()) {
             notifications.addNotification((Notification) notification.getValue());
         }
-        LOGGER.debug("Writing {} Notifications to {}", notifications.getNotificationCollection().size(), outFolder.getAbsolutePath() + File.separator + NOTIFICATION_FILE_NAME);
-        notifications.marshal(new BufferedWriter(new FileWriter(outFolder.getAbsolutePath() + File.separator + NOTIFICATION_FILE_NAME)));
+        LOGGER.info("Writing {} Notifications to {}", notifications.getNotificationCollection().size(), CONFIG_FOLDER.getAbsolutePath() + File.separator + NOTIFICATION_FILE_NAME);
+        notifications.marshal(new BufferedWriter(new FileWriter(CONFIG_FOLDER.getAbsolutePath() + File.separator + NOTIFICATION_FILE_NAME)));
 
-        DestinationPaths destinationPaths = readExistingDestinationPaths(outFolder);
+        DestinationPaths destinationPaths = readExistingDestinationPaths(CONFIG_FOLDER);
         destinationPaths = removeGeneratedDestinationPaths(destinationPaths, PREFIX_GENERATED);
         List<Path> generateDestinationPathForNotifications = generateDestinationPathForNotifications(uniquNotifications.values());
-        LOGGER.debug("Adding {} new generated pathes", generateDestinationPathForNotifications.size());
+        LOGGER.info("Adding {} new generated pathes", generateDestinationPathForNotifications.size());
         for (Path path : generateDestinationPathForNotifications) {
             destinationPaths.addPath(path);
         }
-        LOGGER.debug("Writing {} Pathes to {}", destinationPaths.getPathCollection().size(), outFolder.getAbsolutePath() + File.separator + DESTINATION_FILE_NAME);
-        destinationPaths.marshal(new BufferedWriter(new FileWriter(outFolder.getAbsolutePath() + File.separator + DESTINATION_FILE_NAME)));
+        LOGGER.info("Writing {} Pathes to {}", destinationPaths.getPathCollection().size(), CONFIG_FOLDER.getAbsolutePath() + File.separator + DESTINATION_FILE_NAME);
+        destinationPaths.marshal(new BufferedWriter(new FileWriter(CONFIG_FOLDER.getAbsolutePath() + File.separator + DESTINATION_FILE_NAME)));
 
+        LOGGER.info("Updated Notifications and DestinationPath");
     }
 
     private DestinationPaths readExistingDestinationPaths(File inputFolder) throws FileNotFoundException {
@@ -94,7 +112,7 @@ public class NotificationTokenBasedNotificationGenerator {
                 pathesToRemove.add(path);
             }
         }
-        LOGGER.debug("Removing {} old generated Pathes", pathesToRemove.size());
+        LOGGER.info("Removing {} old generated Pathes", pathesToRemove.size());
         for (Path path : pathesToRemove) {
             destinationPaths.removePath(path);
         }
@@ -118,7 +136,7 @@ public class NotificationTokenBasedNotificationGenerator {
                 notificationsToRemove.add(notification);
             }
         }
-        LOGGER.debug("Removing {} old generated notifications", notificationsToRemove.size());
+        LOGGER.info("Removing {} old generated notifications", notificationsToRemove.size());
         for (Notification notification : notificationsToRemove) {
             notifications.removeNotification(notification);
         }
@@ -195,6 +213,7 @@ public class NotificationTokenBasedNotificationGenerator {
                 Path path = new Path();
                 LOGGER.debug(transportName + SPLITTER + teamName);
                 path.setName(PREFIX_GENERATED + transportName + SPLITTER + teamName);
+                //TODO rework the transport mapping
                 for (String team : teams) {
                     Target target = new Target();
                     target.setName(team);
@@ -208,7 +227,7 @@ public class NotificationTokenBasedNotificationGenerator {
                         target.setCommand(new ArrayList<>(transports));
                     }
                     target.setCommand(temp);
-                    path.setInitialDelay("10m");
+                    path.setInitialDelay(PROPERTIES.getProperty("notification_delay", "10m"));
                     path.addTarget(target);
                 }
                 paths.add(path);
@@ -235,12 +254,7 @@ public class NotificationTokenBasedNotificationGenerator {
         nodeDown.setRule("catinc" + notificationToken);
         nodeDown.setDestinationPath(PREFIX_GENERATED + destinationPath);
         nodeDown.setSubject("[NODE: %nodelabel] #%noticeid%: %nodelabel% is down.");
-        //TODO build a template option for that stuff
-        nodeDown.setTextMessage("All services are down on node %nodelabel%.\n"
-                + "\n"
-                + "http://svipcmonitor.corp.local:8980/opennms/element/node.jsp?node=%nodeid%\n"
-                + "http://svipcmonitor.corp.local:8980/opennms/notification/detail.jsp?notice=%noticeid%\n"
-                + "Notified by destination path: " + destinationPath);
+        nodeDown.setTextMessage(PROPERTIES.getProperty("notification_node_text", NOTIFICATION_NODE_TEXT) + destinationPath);
         nodeDown.setNumericMessage("#%noticeid%: %nodelabel% is down.");
         LOGGER.debug("NodeDown {}, {}, {}", nodeDown.getName(), nodeDown.getRule(), nodeDown.getDestinationPath());
         return nodeDown;
@@ -276,15 +290,7 @@ public class NotificationTokenBasedNotificationGenerator {
         nodeLostService.setStatus("on");
         nodeLostService.setSubject("[SERVICE: %service%(%interface%)] #%noticeid%: %service% on %nodelabel%");
         nodeLostService.setNumericMessage("#%noticeid%: %service% on %nodelabel% is down");
-        //TODO build a template option for that stuff
-        nodeLostService.setTextMessage("%service% down on node %nodelabel%, %interface% at %time%.\n"
-                + "\n"
-                + "http://svipcmonitor.corp.local:8980/opennms/element/node.jsp?node=%nodeid%\n"
-                + "http://svipcmonitor.corp.local:8980/opennms/notification/detail.jsp?notice=%noticeid%\n"
-                + "Wiki:\n"
-                + "https://srvwiki.corp.local/Services/Monitoring/Opennms/OpenNMS_Services/%service%\n"
-                + "Notified by destination path: " + destinationPath);
-
+        nodeLostService.setTextMessage(PROPERTIES.getProperty("notification_service_text", NOTIFICATION_SERVICE_TEXT) + destinationPath);
         LOGGER.debug("NodeLostService {}, {}, {}", nodeLostService.getName(), nodeLostService.getRule(), nodeLostService.getDestinationPath());
         return nodeLostService;
     }

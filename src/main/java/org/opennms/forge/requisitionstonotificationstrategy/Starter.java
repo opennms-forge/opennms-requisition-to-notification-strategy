@@ -1,6 +1,10 @@
 package org.opennms.forge.requisitionstonotificationstrategy;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
@@ -11,14 +15,14 @@ import org.slf4j.LoggerFactory;
 public class Starter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Starter.class);
-
+    
     private final static String INPUT_FILE_PARAMETER = "input-xml";
     private final static String OUTPUT_FOLDER_PARAMETER = "output-folder";
     private static File outFolder;
     private static File inFile;
 
     public static void main(String[] args) {
-        LOGGER.info("Hallo Welt");
+        LOGGER.info("Starting Notification and DestinationPath generation...");
         if (System.getProperty(OUTPUT_FOLDER_PARAMETER, null) != null && System.getProperty(INPUT_FILE_PARAMETER, null) != null) {
 
             inFile = new File(System.getProperty(INPUT_FILE_PARAMETER));
@@ -32,9 +36,9 @@ public class Starter {
                     if (isRequisitionsFile(inFile)) {
                         LOGGER.info("Input file provides requisitions");
                         LOGGER.info("Starting generation...");
-                        NotificationTokenBasedNotificationGenerator notificationGenerator = new NotificationTokenBasedNotificationGenerator();
+                        NotificationTokenBasedNotificationGenerator notificationGenerator = new NotificationTokenBasedNotificationGenerator(inFile, outFolder, buildProperties());
                         try {
-                            notificationGenerator.generateNotificationStrategy(inFile, outFolder);
+                            notificationGenerator.generateNotificationStrategy();
                         } catch (Exception ex) {
                             LOGGER.error("Generation of the notification strategy caused a problem", ex);
                         }
@@ -42,10 +46,10 @@ public class Starter {
                         LOGGER.info("Input file is not a valid requisitions file");
                     }
                 } else {
-                    LOGGER.info("Output folder has a problem {}", outFolder.getAbsolutePath());
-                    LOGGER.info("Output folder exists       :: {}", outFolder.exists());
-                    LOGGER.info("Output folder is Directory :: {}", outFolder.isDirectory());
-                    LOGGER.info("Output folder is writeable :: {}", outFolder.canWrite());
+                    LOGGER.info("Output folder has a problem :: {}", outFolder.getAbsolutePath());
+                    LOGGER.info("Output folder exists        :: {}", outFolder.exists());
+                    LOGGER.info("Output folder is Directory  :: {}", outFolder.isDirectory());
+                    LOGGER.info("Output folder is writeable  :: {}", outFolder.canWrite());
                 }
             } else {
                 LOGGER.info("Input file can not be read {}", inFile.getAbsolutePath());
@@ -53,6 +57,19 @@ public class Starter {
         } else {
             LOGGER.info("Please provide the following parameters: -D" + OUTPUT_FOLDER_PARAMETER + " -D" + INPUT_FILE_PARAMETER);
         }
+    }
+
+    private static Properties buildProperties() {
+        final String PROPERTIES_FILE_NAME = "config.properties";
+        final File PROPERTIES_FILE = new File(PROPERTIES_FILE_NAME);
+        Properties properties = new Properties();
+        try (InputStream input = new FileInputStream(PROPERTIES_FILE)) {
+            properties.load(input);
+            LOGGER.debug("Using properties from file: {}", PROPERTIES_FILE.getAbsolutePath());
+        } catch (IOException ex) {
+            LOGGER.debug("Reading properties failed. Fallback to default values. file: {}", PROPERTIES_FILE.getAbsolutePath());
+        }
+        return properties;
     }
 
     private static boolean isRequisitionsFile(File inFile) {
