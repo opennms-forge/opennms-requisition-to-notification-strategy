@@ -184,59 +184,48 @@ public class NotificationTokenBasedNotificationGenerator {
                     transports.add(part);
                 } else if (part.startsWith(PREFIX_TEAM)) {
                     teams.add(part);
+                } else {
+                    LOGGER.error("PathID contains a part that is not a team or a transport {}", part);
                 }
             }
             if (!transports.isEmpty() && !teams.isEmpty()) {
                 LOGGER.debug("transports and teams are not empty on this one {}", pathID);
-                String transportName = "";
                 StringBuilder sb = new StringBuilder();
                 for (String transport : transports) {
                     sb.append(transport);
                     sb.append(SPLITTER);
                 }
-                transportName = sb.toString();
+                String transportName = sb.toString();
                 if (transportName.endsWith(SPLITTER)) {
                     transportName = transportName.substring(0, transportName.length() - SPLITTER.length());
                 }
 
-                String teamName = "";
                 sb = new StringBuilder();
                 for (String team : teams) {
                     sb.append(team);
                     sb.append(SPLITTER);
                 }
-                teamName = sb.toString();
+                String teamName = sb.toString();
                 if (teamName.endsWith(SPLITTER)) {
                     teamName = teamName.substring(0, teamName.length() - SPLITTER.length());
                 }
 
                 Path path = new Path();
-                LOGGER.debug(transportName + SPLITTER + teamName);
+                LOGGER.debug("creating path {}", transportName + SPLITTER + teamName);
                 path.setName(PREFIX_GENERATED + transportName + SPLITTER + teamName);
-                //TODO rework the transport mapping
                 for (String team : teams) {
                     Target target = new Target();
                     target.setName(team);
-                    List temp = new ArrayList<>();
-                    if (transportName.equals("notify-sms")) {
-                        temp.add("sendSMS");
-                        temp.add("javaEmail");
-                    } else {
-                        temp.add("javaEmail");
-                        target.setCommand(temp);
-                        target.setCommand(new ArrayList<>(transports));
-                    }
-                    target.setCommand(temp);
+                    target.setCommand(new ArrayList<>(transports));
                     path.setInitialDelay(PROPERTIES.getProperty(SupportedProperty.notification_delay.name(), "10m"));
                     path.addTarget(target);
                 }
                 paths.add(path);
             } else {
-                LOGGER.debug("INCOMPLIED pathID {} transport or team is missing", pathID);
+                LOGGER.debug("Incomplied pathID {} transport or team is missing", pathID);
             }
         }
         return paths;
-
     }
 
     private List<Requisition> readRequisitonsFromFile(File requisitionsFile) throws JAXBException {
