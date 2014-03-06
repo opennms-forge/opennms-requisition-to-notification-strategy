@@ -66,6 +66,10 @@ public class Starter {
         try (InputStream input = new FileInputStream(PROPERTIES_FILE)) {
             properties.load(input);
             LOGGER.info("Using properties from file: {}", PROPERTIES_FILE.getAbsolutePath());
+            LOGGER.info("Supported properies are:");
+            for (SupportedProperty property : SupportedProperty.values()) {
+                LOGGER.info("\t{}\t{}", property.name(), properties.getProperty(property.name(), "not set using default"));
+            }
         } catch (IOException ex) {
             LOGGER.info("Reading properties failed. Fallback to default values. file: {}", PROPERTIES_FILE.getAbsolutePath());
         }

@@ -52,11 +52,11 @@ public class NotificationTokenBasedNotificationGenerator {
         this.REQUISITIONS_FILE = requisitionsFile;
         this.CONFIG_FOLDER = configFolder;
         this.PROPERTIES = properties;
-        this.PREFIX_GENERATED = PROPERTIES.getProperty("prefix_generated", "GEN_");
-        this.PREFIX_NOTIFICATION_TOKEN = PROPERTIES.getProperty("prefix_notification_token", "NOTIFY");
-        this.SPLITTER = PROPERTIES.getProperty("splitter", "__");
-        this.PREFIX_TRANSPORT = PROPERTIES.getProperty("prefix_transport", "notify-");
-        this.PREFIX_TEAM = PROPERTIES.getProperty("prefix_team", "team-");
+        this.PREFIX_GENERATED = PROPERTIES.getProperty(SupportedProperty.prefix_generated.name(), "GEN_");
+        this.PREFIX_NOTIFICATION_TOKEN = PROPERTIES.getProperty(SupportedProperty.prefix_notification_token.name(), "NOTIFY");
+        this.SPLITTER = PROPERTIES.getProperty(SupportedProperty.splitter.name(), "__");
+        this.PREFIX_TRANSPORT = PROPERTIES.getProperty(SupportedProperty.prefix_transport.name(), "notify-");
+        this.PREFIX_TEAM = PROPERTIES.getProperty(SupportedProperty.prefix_team.name(), "team-");
     }
 
     public void generateNotificationStrategy() throws Exception {
@@ -227,7 +227,7 @@ public class NotificationTokenBasedNotificationGenerator {
                         target.setCommand(new ArrayList<>(transports));
                     }
                     target.setCommand(temp);
-                    path.setInitialDelay(PROPERTIES.getProperty("notification_delay", "10m"));
+                    path.setInitialDelay(PROPERTIES.getProperty(SupportedProperty.notification_delay.name(), "10m"));
                     path.addTarget(target);
                 }
                 paths.add(path);
@@ -254,7 +254,7 @@ public class NotificationTokenBasedNotificationGenerator {
         nodeDown.setRule("catinc" + notificationToken);
         nodeDown.setDestinationPath(PREFIX_GENERATED + destinationPath);
         nodeDown.setSubject("[NODE: %nodelabel] #%noticeid%: %nodelabel% is down.");
-        nodeDown.setTextMessage(PROPERTIES.getProperty("notification_node_text", NOTIFICATION_NODE_TEXT) + destinationPath);
+        nodeDown.setTextMessage(PROPERTIES.getProperty(SupportedProperty.notification_node_text.name(), NOTIFICATION_NODE_TEXT) + destinationPath);
         nodeDown.setNumericMessage("#%noticeid%: %nodelabel% is down.");
         LOGGER.debug("NodeDown {}, {}, {}", nodeDown.getName(), nodeDown.getRule(), nodeDown.getDestinationPath());
         return nodeDown;
@@ -290,7 +290,7 @@ public class NotificationTokenBasedNotificationGenerator {
         nodeLostService.setStatus("on");
         nodeLostService.setSubject("[SERVICE: %service%(%interface%)] #%noticeid%: %service% on %nodelabel%");
         nodeLostService.setNumericMessage("#%noticeid%: %service% on %nodelabel% is down");
-        nodeLostService.setTextMessage(PROPERTIES.getProperty("notification_service_text", NOTIFICATION_SERVICE_TEXT) + destinationPath);
+        nodeLostService.setTextMessage(PROPERTIES.getProperty(SupportedProperty.notification_service_text.name(), NOTIFICATION_SERVICE_TEXT) + destinationPath);
         LOGGER.debug("NodeLostService {}, {}, {}", nodeLostService.getName(), nodeLostService.getRule(), nodeLostService.getDestinationPath());
         return nodeLostService;
     }
