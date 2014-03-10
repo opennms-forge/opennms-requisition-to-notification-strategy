@@ -274,7 +274,7 @@ public class NotificationTokenBasedNotificationGenerator {
         nodeLostService.setName(PREFIX_GENERATED + notificationToken);
         nodeLostService.setUei("uei.opennms.org/nodes/nodeLostService");
         nodeLostService.setDestinationPath(PREFIX_GENERATED + destinationPath);
-        String rule = "is" + getServiceFromNotificationToken(notificationToken) + " & " + "catinc" + notificationToken;
+        String rule = "(" + "is" + getServiceFromNotificationToken(notificationToken) + " & " + "catinc" + notificationToken + ")";
         nodeLostService.setRule(rule);
         nodeLostService.setStatus("on");
         nodeLostService.setSubject("[SERVICE: %service%(%interface%)] #%noticeid%: %service% on %nodelabel%");

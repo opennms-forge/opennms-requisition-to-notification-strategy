@@ -71,7 +71,7 @@ public class Starter {
                 LOGGER.info("\t{}\t{}", property.name(), properties.getProperty(property.name(), "not set using default"));
             }
         } catch (IOException ex) {
-            LOGGER.info("Reading properties failed. Fallback to default values. file: {}", PROPERTIES_FILE.getAbsolutePath());
+            LOGGER.info("Reading properties failed. Fallback to default values. file: {}", PROPERTIES_FILE.getAbsolutePath(), ex);
         }
         return properties;
     }
