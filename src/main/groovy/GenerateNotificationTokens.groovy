@@ -1,20 +1,16 @@
-/**
- * This is a PRIS script-steps file
- **/
-
-import org.opennms.netmgt.provision.persist.requisition.Requisition
-import org.opennms.netmgt.provision.persist.requisition.RequisitionAsset
-import org.opennms.netmgt.provision.persist.requisition.RequisitionNode
-import org.opennms.netmgt.provision.persist.requisition.RequisitionCategory
-import org.opennms.netmgt.provision.persist.requisition.RequisitionInterface
-import org.opennms.netmgt.provision.persist.requisition.RequisitionMonitoredService
+import org.opennms.pris.model.Requisition
+import org.opennms.pris.model.RequisitionAsset
+import org.opennms.pris.model.RequisitionNode
+import org.opennms.pris.model.RequisitionCategory
+import org.opennms.pris.model.RequisitionInterface
+import org.opennms.pris.model.RequisitionMonitoredService
 
 final String PREFIX_TRANSPORT= "notify-"
 final String PREFIX_GROUP= "team-"
 final String PREFIX_NOTIFY_CATEGORY = "NOTIFY"
 final String SPLITTER = "__"
 
-Requisition requisition = data
+Requisition requisition = requisition
 
 for (RequisitionNode node : requisition.getNodes()) {
     Set<String> notificationTokens = new TreeSet<>()
@@ -27,11 +23,11 @@ for (RequisitionNode node : requisition.getNodes()) {
     if (notificationToken.contains(PREFIX_GROUP) && notificationToken.contains(PREFIX_TRANSPORT)) {
         //add custom notificationToken for the node
         node.getCategories().add(new RequisitionCategory(PREFIX_NOTIFY_CATEGORY + SPLITTER + notificationToken))
-    
+
         //build custom notificationTokens for services of the node
         Set<String> serviceNotificationTokens = new TreeSet<>()
         for(RequisitionInterface reqInterface : node.getInterfaces()) {
-            for (RequisitionMonitoredService service : reqInterface.getMonitoredService()) {
+            for (RequisitionMonitoredService service : reqInterface.getMonitoredServices()) {
                 serviceNotificationTokens.add(PREFIX_NOTIFY_CATEGORY + SPLITTER + service.getServiceName() + SPLITTER + notificationToken)
             }
         }
